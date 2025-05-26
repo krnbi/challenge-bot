@@ -55,4 +55,13 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 app = ApplicationBuilder().token(BOT_TOKEN).build()
 app.add_handler(CommandHandler("checkin", checkin))
 app.add_handler(CallbackQueryHandler(button))
-app.run_polling()
+import asyncio
+
+async def run_bot():
+    await app.initialize()
+    await app.start()
+    await app.updater.start_polling()
+    print("✅ Telegram bot is running")
+
+asyncio.run(run_bot())
+
