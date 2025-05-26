@@ -1,66 +1,53 @@
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandler, ContextTypes
-from flask import Flask
-import threading
 import os
-import asyncio  # Импорт один раз здесь
+from flask import Flask, request
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 
-# 🔑 Токен твоего бота
-BOT_TOKEN = "7702678827:AAGLhDvODKSpPP5wA-NGh3iwpe0Ampu5pwE"
+# Чтение переменных окружения
+BOT_TOKEN = os.environ["BOT_TOKEN"]               # добавьте в Render Settings
+APP_URL   = os.environ["RENDER_EXTERNAL_URL"]     # например https://challenge-bot-xyz.onrender.com
 
-# 🌐 Flask-сервер для Render
-app_web = Flask(__name__)
+# Инициализация Flask
+app = Flask(__name__)
 
-@app_web.route('/')
-def home():
-    return "Bot is running!"
+# Инициализация Telegram-бота
+application = ApplicationBuilder().token(BOT_TOKEN).build()
 
-def run_web():
-    port = int(os.environ.get("PORT", 8080))
-    app_web.run(host="0.0.0.0", port=port)
-
-# 🚀 Запускаем Flask в отдельном потоке
-threading.Thread(target=run_web).start()
-
-# 🔁 Обработка команды /checkin
+# Обработчик команды /checkin
 async def checkin(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("🚀 checkin handler triggered")     # <-- вот этот лог
-    chat_id = update.effective_chat.id
-    print(f"Chat ID is: {chat_id}")
-
     keyboard = [
-        [
-            InlineKeyboardButton("✅ Yes!", callback_data="yes"),
-            InlineKeyboardButton("❌ Not this time", callback_data="no")
-        ]
+        [InlineKeyboardButton("✅ Yes!", callback_data="yes"),
+         InlineKeyboardButton("❌ Not this time", callback_data="no")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-
     await context.bot.send_message(
-        chat_id=chat_id,
+        chat_id=update.effective_chat.id,
         text="Hey team! It’s check-in time!\n\nDid you do your daily move challenge?",
         reply_markup=reply_markup
     )
 
-# 🔘 Ответ на нажатие кнопки
-async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# Обработчик нажатий на кнопки
+async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    await query.edit_message_text(
-        text=f"Response received: {query.data} ✅"
-    )
+    await query.edit_message_text(text=f"Response received: {query.data} ✅")
 
-# 🤖 Запуск Telegram-бота
-async def main():
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
-    app.add_handler(CommandHandler("checkin", checkin))
-    app.add_handler(CallbackQueryHandler(button))
+# Регистрируем хэндлеры
+application.add_handler(CommandHandler("checkin", checkin))
+application.add_handler(CallbackQueryHandler(handle_button))
 
-    await app.initialize()
-    await app.start()
-    await app.updater.start_polling()
+# Эндпоинт для webhook
+@app.route(f"/{BOT_TOKEN}", methods=["POST"])
+def telegram_webhook():
+    data = request.get_json(force=True)
+    update = Update.de_json(data, application.bot)
+    application.process_update(update)
+    return "OK"
 
-    print("✅ Bot polling started.")
-
-# Запускаем main без условия __name__, чтобы на Render точно вызвалось
-asyncio.run(main())
+# Точка входа
+if __name__ == "__main__":
+    # Устанавливаем webhook в Telegram
+    application.bot.set_webhook(f"{APP_URL}/{BOT_TOKEN}")
+    # Запускаем Flask
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=port)
