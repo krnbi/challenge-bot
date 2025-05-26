@@ -51,11 +51,20 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text=f"Response received: {query.data} ✅"
     )
 
-# 🤖 Запуск Telegram-бота
-app = ApplicationBuilder().token(BOT_TOKEN).build()
-app.add_handler(CommandHandler("checkin", checkin))
-app.add_handler(CallbackQueryHandler(button))
 import asyncio
+
+# 🤖 Запуск Telegram-бота
+async def main():
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
+    app.add_handler(CommandHandler("checkin", checkin))
+    app.add_handler(CallbackQueryHandler(button))
+    await app.initialize()
+    await app.start()
+    await app.updater.start_polling()
+    print("✅ Bot polling started.")
+
+asyncio.run(main())
+
 
 async def run_bot():
     await app.initialize()
