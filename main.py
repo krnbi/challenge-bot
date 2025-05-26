@@ -1,12 +1,25 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandler, ContextTypes
-from keep_alive import keep_alive  # для 24/7
+from flask import Flask
+import threading
+import os
 
 # 🔑 Токен твоего бота
 BOT_TOKEN = "7702678827:AAGLhDvODKSpPP5wA-NGh3iwpe0Ampu5pwE"
 
-# 🚀 Запускаем веб-сервер для UptimeRobot
-keep_alive()
+# 🌐 Flask-сервер для Render
+app_web = Flask(__name__)
+
+@app_web.route('/')
+def home():
+    return "Bot is running!"
+
+def run_web():
+    port = int(os.environ.get("PORT", 8080))
+    app_web.run(host="0.0.0.0", port=port)
+
+# 🚀 Запускаем Flask в отдельном потоке
+threading.Thread(target=run_web).start()
 
 # 🟢 Показываем, что бот жив
 print("Бот запущен и слушает команды...")
@@ -38,7 +51,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text=f"Response received: {query.data} ✅"
     )
 
-# 🧠 Запуск бота
+# 🤖 Запуск Telegram-бота
 app = ApplicationBuilder().token(BOT_TOKEN).build()
 app.add_handler(CommandHandler("checkin", checkin))
 app.add_handler(CallbackQueryHandler(button))
