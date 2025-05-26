@@ -65,7 +65,6 @@ async def main():
 
 asyncio.run(main())
 
-
 async def run_bot():
     await app.initialize()
     await app.start()
