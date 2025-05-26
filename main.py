@@ -3,6 +3,7 @@ from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandle
 from flask import Flask
 import threading
 import os
+import asyncio  # Импорт должен быть здесь, а не дважды
 
 # 🔑 Токен твоего бота
 BOT_TOKEN = "7702678827:AAGLhDvODKSpPP5wA-NGh3iwpe0Ampu5pwE"
@@ -21,13 +22,10 @@ def run_web():
 # 🚀 Запускаем Flask в отдельном потоке
 threading.Thread(target=run_web).start()
 
-# 🟢 Показываем, что бот жив
-print("Бот запущен и слушает команды...")
-
 # 🔁 Обработка команды /checkin
 async def checkin(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    print(f"Chat ID is: {chat_id}")  # Вывод в консоль
+    print(f"Chat ID is: {chat_id}")
 
     keyboard = [
         [
@@ -51,25 +49,18 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text=f"Response received: {query.data} ✅"
     )
 
-import asyncio
-
 # 🤖 Запуск Telegram-бота
 async def main():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("checkin", checkin))
     app.add_handler(CallbackQueryHandler(button))
+
     await app.initialize()
     await app.start()
     await app.updater.start_polling()
+
     print("✅ Bot polling started.")
 
-asyncio.run(main())
-
-async def run_bot():
-    await app.initialize()
-    await app.start()
-    await app.updater.start_polling()
-    print("✅ Telegram bot is running")
-
-asyncio.run(run_bot())
+if __name__ == "__main__":
+    asyncio.run(main())
 
