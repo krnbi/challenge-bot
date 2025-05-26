@@ -3,7 +3,7 @@ from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandle
 from flask import Flask
 import threading
 import os
-import asyncio  # Импорт должен быть здесь, а не дважды
+import asyncio  # Импорт один раз здесь
 
 # 🔑 Токен твоего бота
 BOT_TOKEN = "7702678827:AAGLhDvODKSpPP5wA-NGh3iwpe0Ampu5pwE"
@@ -24,6 +24,7 @@ threading.Thread(target=run_web).start()
 
 # 🔁 Обработка команды /checkin
 async def checkin(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("🚀 checkin handler triggered")     # <-- вот этот лог
     chat_id = update.effective_chat.id
     print(f"Chat ID is: {chat_id}")
 
@@ -61,6 +62,5 @@ async def main():
 
     print("✅ Bot polling started.")
 
-if __name__ == "__main__":
-    asyncio.run(main())
-
+# Запускаем main без условия __name__, чтобы на Render точно вызвалось
+asyncio.run(main())
